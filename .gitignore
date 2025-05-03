@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# My files 
+input_videos/
+model_training_notebook/runs/
+runs/
+model_training_notebook/Basketball-Players-17/
+.vscode/
+model_training_notebook/*.pt
