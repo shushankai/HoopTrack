@@ -181,3 +181,4 @@ runs/
 model_training_notebook/Basketball-Players-17/
 .vscode/
 model_training_notebook/*.pt
+org/
