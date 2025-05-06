@@ -62,7 +62,8 @@ class PlayerTracker:
 
                 if cls_id == class_names_inv['Player']:
                     tracks[frame_num][track_id] = {"bbox":bbox} # here frame number acts as index in the list and the track_id is the key for the dict at the index 
-            save_stub(
+        
+        save_stub(
                 stub_path= stub_path,
                 object= tracks
             )
