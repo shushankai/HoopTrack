@@ -1,4 +1,6 @@
 import supervision as sv
+import numpy as np 
+import pandas as pd 
 import sys
 sys.path.append('../')
 
@@ -46,7 +48,7 @@ class BallTracker:
                 bbox = frame_detect[0].tolist()
                 cls_id = frame_detect[3]
                 confidence = frame_detect[2]
-                track_id = frame_detect[4]
+                
 
                 if cls_id == cls_names_inv['Ball']:
                     if max_confidence<confidence:
@@ -54,9 +56,53 @@ class BallTracker:
                         max_confidence = confidence
 
                 if chosen_bbox is not None:
-                    tracks[frame_num][track_id] = {'bbox':chosen_bbox}
+                    tracks[frame_num][1] = {'bbox':chosen_bbox}
                 
 
         save_stub(stub_path=stub_path,object=tracks)
         return tracks
 
+
+
+    def remove_wrong_detections(self, ball_positions):
+        max_allowed_distance = 25 # maximum allowed difference in distance of ball in two frames 
+        last_good_frame_index = -1
+
+        for i in range(len(ball_positions)):
+            # frame_num = i , get(1, {}) = track_id, get(1, []) = bbox
+            # tracks = #TODO structure of the tracks 
+            current_bbox = ball_positions[1].get(1, {}).get(1, []) 
+
+            if len(current_bbox) == 0:
+                continue
+
+            if last_good_frame_index == -1: 
+                # First valid detection
+                last_good_frame_index = i 
+                continue
+            
+            last_good_box = ball_positions[last_good_frame_index].get(1, {}).get(1, []) 
+            frame_gap = i - last_good_frame_index
+            adjusted_distance = max_allowed_distance * frame_gap
+
+            # calculate the distance between last bbox and the current position
+            if np.linalg.norm(np.array(last_good_box[:2]) - np.array(current_bbox[:2])) > adjusted_distance:
+                ball_positions[i] = {}
+            else: 
+                last_good_frame_index = i
+
+        return ball_positions
+
+
+    def interpolate_ball_positions(self, ball_positions):
+
+        ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
+        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+        # Missing values will be filled using the interpolate - linear and backfill 
+        df_ball_positions = df_ball_positions.interpolate()
+        df_ball_positions = df_ball_positions.bfill()
+
+        ball_positions = [{1:{'bbox': x}} for x in df_ball_positions.to_numpy().tolist()]
+        return ball_positions
+            
